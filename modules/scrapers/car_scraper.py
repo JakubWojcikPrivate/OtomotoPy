@@ -52,9 +52,9 @@ class CarScraper:
         for x in car_links_section.find_all('article'):
             x = x.find('a', href=True)
             if x is not None:
-                # print(x.get    ('a', class_='ooa-51p4fw'))
-                print(x)
-                links.append(x)
+                if x.find(class_=True) is None:
+                    http = x.get('href')
+                    links.append(http)
 
         console_logger.info('Found %s links', len(links))
         file_logger.info('Found %s links', len(links))
@@ -78,6 +78,8 @@ class CarScraper:
             last_page_num = int(soup.find_all(
                 'li', attrs={'data-testid': 'pagination-list-item'})[-1].text)
         except Exception:
+            console_logger.info('Exception in scrapping model: %s', model)
+            file_logger.info('Exception in scrapping model: %s', model)
             last_page_num = 1
         last_page_num = min(last_page_num, 500)
 
@@ -90,6 +92,7 @@ class CarScraper:
             self.ad_fetcher.fetch_ads(links)
             time.sleep(0.2)
         self.ad_fetcher.save_ads(model)
+
 
         console_logger.info('End Scrapping model: %s', model)
         file_logger.info('End Scrapping model: %s', model)
@@ -115,6 +118,8 @@ class CarScraper:
                 combined_data.append(pd.read_excel(
                     filename, index_col='Unnamed: 0'))
             except Exception:
+                console_logger.info('Error reading tab from file...')
+                file_logger.info('Error reading tab from file...')
                 pass
         df_all = pd.concat(combined_data, ignore_index=True)
         df_all.to_excel('car.xlsx', index=False)

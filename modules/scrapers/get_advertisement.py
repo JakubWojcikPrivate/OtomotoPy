@@ -34,41 +34,63 @@ class AdvertisementFetcher:
         return temp
 
     def _download_url(self, path):
+        test_stage = 0
         try:
+            test_stage = 1
             file_logger.info(f'Fetching {path}')
+
+            test_stage = 2
             res = requests.get(path)
+
+            test_stage = 3
             res.raise_for_status()
+
+            test_stage = 4
             soup = BeautifulSoup(res.text, features='lxml')
 
+            test_stage = 5
             main_params = soup.find_all(class_='offer-params__item')
+
+            test_stage = 6
             features = {
                 param.find('span', class_='offer-params__label').text.strip():
-                    param.find(
-                        'div', class_='offer-params__value').text.strip()
+                    param.find('div', class_='offer-params__value').text.strip()
                 for param in main_params
             }
-            extendend_params = soup.find_all(
-                'li', class_='parameter-feature-item')
+
+            test_stage = 7
+            extendend_params = soup.find_all('li', class_='parameter-feature-item')
+            print(extendend_params)
+
+            test_stage = 8
             for param in extendend_params:
                 features[param.text.strip()] = 1
 
-            price = ''.join(
-                soup.find('span',
-                          class_='offer-price__number').text.
-                strip().split()[:-1]
-            )
+            # Searching for advert ID
+            test_stage = 9
+            id = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
+
+            # Searching for advert number
+            test_stage = + 10
+            id_number = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
+
+            test_stage = + 11
+            price = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
             features['Cena'] = price
-            currency = soup.find(
-                'span', class_='offer-price__currency').text.strip()
+
+            test_stage = + 12
+            currency = soup.find('span', class_='offer-price__currency').text.strip()
             features['Waluta'] = currency
-            price_details = soup.find(
-                'span', class_='offer-price__details').text.strip()
+
+            test_stage = + 13
+            price_details = soup.find('span', class_='offer-price__details').text.strip()
             features['Szczegóły ceny'] = price_details
 
             features = self._make_line(features)
 
         except Exception as e:
-            file_logger.error(f'Error {e} while fetching {path}')
+            file_logger.error(f'Error {e} at stage {test_stage} while fetching {path}')
+            console_logger.error(f'Error {e} at stage {test_stage} while fetching {path}')
             return None
 
         time.sleep(0.25)
@@ -86,8 +108,7 @@ class AdvertisementFetcher:
                     len(links)
                 )
         ) as executor:
-            features = [executor.submit(self._download_url, link)
-                        for link in links]
+            features = [executor.submit(self._download_url, link) for link in links]
             for feature in features:
                 result = feature.result()
                 if result is not None:
