@@ -114,6 +114,7 @@ class AdvertisementFetcher:
                 ('offer-price__number', 'offer-price__number'),
                 (True, False))
 
+
             test_stage = + 12
             features['Waluta'] = self._search_ext_param(soup, 'offer-price__currency')
 
