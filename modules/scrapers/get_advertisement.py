@@ -33,6 +33,40 @@ class AdvertisementFetcher:
                 for feat in self.all_features}
         return temp
 
+    def _search_ext_param(self, soup, param_name, split=True):
+
+        # Set up everything for 'span' parameter
+        tag_search = soup.find('span', class_=param_name)
+
+        if tag_search is not None:
+            if split:
+                param = ''.join(tag_search.text.strip().split()[:-1])
+            else:
+                param = ''.join(tag_search.text.strip())
+            return param
+
+        # Set up everything for 'h3' parameter
+        tag_search = soup.find('h3', class_=param_name)
+
+        if tag_search is not None:
+            param = ''.join(tag_search.text.strip())
+            return param
+
+        return ''
+
+    def __search_ext_param(self, soup, param_prefix, param_name, split):
+        # Iterate over tuple
+        for p, n, s in zip(param_prefix, param_name, split):
+            tag_search = soup.find(p, class_=n)
+            if tag_search is not None:
+                if s:
+                    param = ''.join(tag_search.text.strip().split()[:-1])
+                else:
+                    param = ''.join(tag_search.text.strip())
+
+                return param
+        return ''
+
     def _download_url(self, path):
         test_stage = 0
         try:
@@ -60,7 +94,6 @@ class AdvertisementFetcher:
 
             test_stage = 7
             extendend_params = soup.find_all('li', class_='parameter-feature-item')
-            print(extendend_params)
 
             test_stage = 8
             for param in extendend_params:
@@ -68,32 +101,41 @@ class AdvertisementFetcher:
 
             # Searching for advert ID
             test_stage = 9
-            id = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
+            features['Id'] = self._search_ext_param(soup, 'offer-price__details', False)
 
             # Searching for advert number
             test_stage = + 10
-            id_number = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
+            features['Id_num'] = self._search_ext_param(soup, 'offer-price__details', False)
 
             test_stage = + 11
-            price = ''.join(soup.find('span', class_='offer-price__number').text.strip().split()[:-1])
-            features['Cena'] = price
+            features['Cena'] = self.__search_ext_param(
+                soup,
+                ('span', 'h3'),
+                ('offer-price__number', 'offer-price__number'),
+                (True, False))
 
             test_stage = + 12
-            currency = soup.find('span', class_='offer-price__currency').text.strip()
-            features['Waluta'] = currency
+            features['Waluta'] = self._search_ext_param(soup, 'offer-price__currency')
 
             test_stage = + 13
-            price_details = soup.find('span', class_='offer-price__details').text.strip()
-            features['Szczegóły ceny'] = price_details
+            features['Szczegóły ceny'] = self._search_ext_param(soup, 'offer-price__details', False)
 
+            test_stage = + 14
+            features['Http'] = path
+
+            test_stage = 15
+            features['Data dodania'] = self._search_ext_param(soup, 'offer-price__details', False)
+
+            test_stage = + 16
             features = self._make_line(features)
 
         except Exception as e:
             file_logger.error(f'Error {e} at stage {test_stage} while fetching {path}')
-            console_logger.error(f'Error {e} at stage {test_stage} while fetching {path}')
+            console_logger.error(f'Error {e} at stage {test_stage} ext param len {str(len(extendend_params))} while '
+                                 f'fetching {path}')
             return None
 
-        time.sleep(0.25)
+        time.sleep(0.2)
 
         return features
 
